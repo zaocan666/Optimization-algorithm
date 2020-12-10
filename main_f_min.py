@@ -9,7 +9,7 @@ plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 from GA_algorithm import GA_optimizer
 
 def aim_function(xs):
-    return xs[1]*math.sin(xs[0])+xs[0]*math.cos(xs[1])
+    return -(xs[1]*math.sin(xs[0])+xs[0]*math.cos(xs[1]))
 
 # GA种群中的个体定义，函数自变量有两个
 class GA_Individual():
@@ -59,7 +59,7 @@ class GA_Individual():
     def fitness(self):
         x0_str = self.chromosome[:self.len_of_bin]
         x1_str = self.chromosome[self.len_of_bin:]
-        return aim_function([self.bin2num(x0_str, 0), self.bin2num(x1_str, 1)])
+        return -aim_function([self.bin2num(x0_str, 0), self.bin2num(x1_str, 1)])
 
     def __repr__(self):
         x0, x1 = self.xs_chromosome()
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
-    parser.add_argument('--mood', type=str, default='history', help='once/history/multi_times')
+    parser.add_argument('--mood', type=str, default='multi_times', help='once/history/multi_times')
     # GA param
     parser.add_argument('--GA_N', type=int, default=30, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         np.random.seed(args.random_seed)
 
     if args.method == 'GA':
-        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, args.GA_nochange_iter)
+        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, args.GA_nochange_iter, history_convert=lambda x:-x)
 
     # 绘制出某次仿真过程中目标函数的变化曲线
     if args.mood=='history':
@@ -100,11 +100,11 @@ if __name__ == '__main__':
         best_fitnesses = []
         for i in range(20):
             best_individual, _ = optimizer.optimize(args.max_iteration, verbose=False)
-            best_fitnesses.append(best_individual.fitness())
+            best_fitnesses.append(-best_individual.fitness())
             print(best_fitnesses[-1])
         best_fitnesses = np.array(best_fitnesses)
         print('平均性能: %.3f\t 最佳性能: %.3f\t 最差性能: %.3f\t 方差: %.8f'%
-            (best_fitnesses.mean(), best_fitnesses.max(), best_fitnesses.min(), best_fitnesses.var()))
+            (best_fitnesses.mean(), best_fitnesses.min(), best_fitnesses.max(), best_fitnesses.var()))
         
         plt.plot(best_fitnesses)
         plt.xlabel(u'实验次数')
