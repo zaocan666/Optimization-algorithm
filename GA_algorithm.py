@@ -2,7 +2,7 @@ import numpy as np
 import copy
 
 class GA_optimizer():
-    def __init__(self, class_individual, N, C, M, nochange_iter, last_generation_left=0.2, history_convert = lambda x:x):
+    def __init__(self, class_individual, N, C, M, nochange_iter, choose_mode='range', last_generation_left=0.2, history_convert = lambda x:x):
         # class_individual: 个体的class，可调用产生新个体
         # N: 种群规模
         # C: 交叉概率
@@ -10,6 +10,7 @@ class GA_optimizer():
         # nochange_iter: 性能最好的个体保持不变nochange_iter回合后，优化结束
         # history_convert: 在记录history时将fitness转化为实际效用
         # last_generation_left: 保留上一代的比例
+        # choose_mode: range（按排名算概率）/ fitness（按fitness算概率）
 
         # assert N%2==0 # 默认种群规模为偶数
         self.class_individual = class_individual
@@ -19,6 +20,7 @@ class GA_optimizer():
         self.nochange_iter = nochange_iter
         self.history_convert = history_convert
         self.last_generation_left=last_generation_left
+        self.choose_mode = choose_mode
 
     # 由旧种群产生新种群，包含交叉变异操作
     def selection(self, population, fitnesses):
@@ -27,9 +29,16 @@ class GA_optimizer():
         population_sorted = list(zip(*population_fit_sorted))[1]
         population_sorted_left = population_sorted[::-1][:int(self.last_generation_left*len(population_sorted))]
         population_sorted_left = population_sorted_left[::-1]
-        choose_probability = list(range(1, len(population_sorted_left)+1))
-        choose_probability = np.array(choose_probability)/np.sum(choose_probability)
+        if self.choose_mode=='range':
+            choose_probability = list(range(1, len(population_sorted_left)+1))
+            choose_probability = np.array(choose_probability)/np.sum(choose_probability)
+        elif self.choose_mode=='fitness':
+            fitness_sorted = list(zip(*population_fit_sorted))[0]
+            choose_probability = (fitness_sorted[::-1][:len(population_sorted_left)])[::-1]
+            choose_probability = np.array(choose_probability)/np.sum(choose_probability)
+
         new_population = [population_sorted_left[-1], population_sorted_left[-2]] # 先将当前种群效用最佳的两个个体继承到子代种群
+        # new_population = []
         while len(new_population)<self.N:
             # 按适配值大小随机选择两个个体
             p1 = np.random.choice(population_sorted_left, p=choose_probability)
@@ -88,6 +97,6 @@ class GA_optimizer():
             nochange_iter_running = nochange_iter_running - 1
 
             if verbose:
-                print('iteration: %d\t best_individual: %s\t best_fitness: %.3f\t nochange_iter:%d'%(i, best_individual.__repr__(), best_individual.fitness(), nochange_iter_running))
+                print('iteration: %d\t best_individual: %s\t best_fitness: %.3f\t nochange_iter:%d'%(i, best_individual.__repr__(), self.history_convert(best_individual.fitness()), nochange_iter_running))
             
         return best_individual, fitness_history

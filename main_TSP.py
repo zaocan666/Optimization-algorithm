@@ -33,8 +33,11 @@ class TSP_MAP():
         self.num_of_points = int(lines[0].strip())
         points = []
         for line in lines[1:]:
-            ps = line.strip().split(' ')
-            points.append([float(ps[0]), float(ps[1])])
+            try:
+                ps = line.strip().split(' ')
+                points.append([float(ps[0]), float(ps[1])])
+            except:
+                break
 
         self.points = np.array(points)
         self.calculate_distance_martix()
@@ -139,6 +142,7 @@ class GA_Individual():
     def fitness(self):
         distance_sum = TSP_map.route_distance(self.chromosome)
         return -distance_sum
+        # return 1/distance_sum
 
     def __repr__(self):
         return str(self.chromosome)
@@ -401,19 +405,20 @@ class SA_TSP():
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
+    parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
     parser.add_argument('--mood', type=str, default='history', help='task index, value:[once/history/multi_times]')
     parser.add_argument('--map_mood', type=str, default='read', help='way of getting map, value: [random/read]')
     parser.add_argument('--map_point_num', type=int, default=30, help='num of points in the TSP map')
-    parser.add_argument('--map_file', type=str, default='TSP_points/BEN30-XY.txt', help='route of map points file')
+    parser.add_argument('--map_file', type=str, default='TSP_points/BEN75-XY.txt', help='route of map points file')
     # GA param
     parser.add_argument('--GA_N', type=int, default=60, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
     parser.add_argument('--GA_M', type=float, default=0.2, help='probability of mutaion')
     parser.add_argument('--GA_nochange_iter', type=int, default=500,
                         help='num of iteration without change of best individual before stop')
+    parser.add_argument('--GA_last_gl', type=float, default=0.2, help='proportion of last generation left')
     # SA param
     parser.add_argument('--SA_T0_mode', type=str, default='experience', help='way of initializing temperature , value: [random/experience]')
     parser.add_argument('--SA_route_mode', type=str, default='MULTI2',help='way of updating route, value: [SWAP/REVERSE/INSERT/MULTI1/MULTI2]')
@@ -444,7 +449,8 @@ if __name__ == '__main__':
         np.random.seed(args.random_seed)
 
     if args.method == 'GA':
-        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, args.GA_nochange_iter,history_convert=lambda x: -x)
+        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, 
+                    args.GA_nochange_iter, choose_mode='range', last_generation_left=args.GA_last_gl, history_convert=lambda x: -x)
     elif args.method == 'SA':
         optimizer = SA_TSP(TSP_map, args.SA_T0_mode, args.SA_route_mode, args.SA_T_annealing_mode)
         optimizer.init_outer_para(args.SA_T_converge_mode, args.SA_T_Lambda, args.SA_T_end, args.SA_T_out_step, args.SA_T_out_dE_step, args.SA_T_out_dE_threshold)
@@ -481,19 +487,21 @@ if __name__ == '__main__':
         best_fitnesses = []
         TIMES = []
         t_before= time.time()-T0
-        for i in range(1):
+        for i in range(20):
             t0 = time.time()
             if args.method == 'GA':
                 best_individual, _ = optimizer.optimize(args.max_iteration, verbose=False)
                 TIMES.append(time.time() - t0+t_before)
                 best_fitnesses.append(-best_individual.fitness())
+                curr_route = best_individual.chromosome
             elif args.method == 'SA':
                 curr_route, fit_history = optimizer.optimize()
                 TIMES.append(time.time() - t0+t_before)
                 best_fitnesses.append(fit_history[-1])
-                if best_fitnesses[-1]<min_dist:
-                    min_dist = best_fitnesses[-1]
-                    min_dist_route = curr_route
+
+            if best_fitnesses[-1]<min_dist:
+                min_dist = best_fitnesses[-1]
+                min_dist_route = curr_route
             print(best_fitnesses[-1])
 
         best_fitnesses = np.array(best_fitnesses)
