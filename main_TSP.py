@@ -126,14 +126,15 @@ class GA_Individual():
         # return self.crossover_order(p2)
 
     def mutation(self, p):
-        for i in range(self.num_of_points):
-            if np.random.rand() > p:
-                continue
-            other_part = list(set(range(self.num_of_points)) - set([i]))
-            change_j = np.random.choice(other_part)
-            temp = self.chromosome[change_j]
-            self.chromosome[change_j] = self.chromosome[i]
-            self.chromosome[i] = temp
+        if np.random.rand() > p:
+            return
+        index_list = list(range(len(self.chromosome)))
+        sam = list(random.sample(index_list, 2))
+        start, end = min(sam), max(sam)
+        tmp = self.chromosome[start:end]
+        # np.random.shuffle(tmp)
+        tmp = tmp[::-1]
+        self.chromosome[start:end] = tmp
 
     def fitness(self):
         distance_sum = TSP_map.route_distance(self.chromosome)
@@ -322,8 +323,6 @@ class SA_TSP():
             return False
 
     def optimize(self):
-
-
         T = self.init_T0(self.T0_mode)
 
         route_curr = np.arange(self.N)#random.sample(range(0,self.N),self.N)
@@ -402,8 +401,8 @@ class SA_TSP():
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
-    parser.add_argument('--max_iteration', type=int, default=5000, help='type of optimization method')
+    parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
+    parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
     parser.add_argument('--mood', type=str, default='history', help='task index, value:[once/history/multi_times]')
     parser.add_argument('--map_mood', type=str, default='read', help='way of getting map, value: [random/read]')
@@ -412,7 +411,7 @@ if __name__ == '__main__':
     # GA param
     parser.add_argument('--GA_N', type=int, default=60, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
-    parser.add_argument('--GA_M', type=float, default=0.01, help='probability of mutaion')
+    parser.add_argument('--GA_M', type=float, default=0.2, help='probability of mutaion')
     parser.add_argument('--GA_nochange_iter', type=int, default=500,
                         help='num of iteration without change of best individual before stop')
     # SA param

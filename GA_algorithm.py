@@ -2,33 +2,38 @@ import numpy as np
 import copy
 
 class GA_optimizer():
-    def __init__(self, class_individual, N, C, M, nochange_iter, history_convert = lambda x:x):
+    def __init__(self, class_individual, N, C, M, nochange_iter, last_generation_left=0.2, history_convert = lambda x:x):
         # class_individual: 个体的class，可调用产生新个体
         # N: 种群规模
         # C: 交叉概率
         # M: 变异概率
         # nochange_iter: 性能最好的个体保持不变nochange_iter回合后，优化结束
         # history_convert: 在记录history时将fitness转化为实际效用
-        assert N%2==0 # 默认种群规模为偶数
+        # last_generation_left: 保留上一代的比例
+
+        # assert N%2==0 # 默认种群规模为偶数
         self.class_individual = class_individual
         self.N = N
         self.C = C
         self.M = M
         self.nochange_iter = nochange_iter
         self.history_convert = history_convert
+        self.last_generation_left=last_generation_left
 
     # 由旧种群产生新种群，包含交叉变异操作
     def selection(self, population, fitnesses):
         # 按排名分配被选择的概率
         population_fit_sorted = sorted(zip(fitnesses, population), key=lambda x:x[0]) # 按fitnesses从小到大排序
         population_sorted = list(zip(*population_fit_sorted))[1]
-        choose_probability = list(range(1, len(population_sorted)+1))
+        population_sorted_left = population_sorted[::-1][:int(self.last_generation_left*len(population_sorted))]
+        population_sorted_left = population_sorted_left[::-1]
+        choose_probability = list(range(1, len(population_sorted_left)+1))
         choose_probability = np.array(choose_probability)/np.sum(choose_probability)
-        new_population = [population_sorted[-1], population_sorted[-2]] # 先将当前种群效用最佳的两个个体继承到子代种群
-        for i in range(self.N//2-2):
+        new_population = [population_sorted_left[-1], population_sorted_left[-2]] # 先将当前种群效用最佳的两个个体继承到子代种群
+        while len(new_population)<self.N:
             # 按适配值大小随机选择两个个体
-            p1 = np.random.choice(population_sorted, p=choose_probability)
-            p2 = np.random.choice(population_sorted, p=choose_probability)
+            p1 = np.random.choice(population_sorted_left, p=choose_probability)
+            p2 = np.random.choice(population_sorted_left, p=choose_probability)
             
             # 按概率随机选择是否进行交叉
             if np.random.rand()<self.C:
@@ -43,8 +48,10 @@ class GA_optimizer():
             p1_new.mutation(self.M)
             p2_new.mutation(self.M)
 
-            new_population.append(p1_new)
-            new_population.append(p2_new)
+            if p1_new.fitness()>p2_new.fitness():
+                new_population.append(p1_new)
+            else:
+                new_population.append(p2_new)
 
         return new_population
 
