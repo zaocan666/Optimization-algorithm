@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--SA_x_mode', type=str, default='Gauss', help='way of updating variable, value:[Gauss/Cauchy]')
 
     parser.add_argument('--SA_T_converge_mode', type=str, default='iteration',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
-    parser.add_argument('--SA_T_out_step', type=int, default=100, help='maximum steps in the outer cycle')
+    parser.add_argument('--SA_T_out_step', type=int, default=150, help='maximum steps in the outer cycle')
     parser.add_argument('--SA_T_end', type=float, default=1e-4, help='minimum temperature in the outer cycle')
     parser.add_argument('--SA_T_out_dE_threshold', type=int, default=21,help='threshold of difference between Distances(n) and Distances(n+1) in the outer cycle')
     parser.add_argument('--SA_T_out_dE_step', type=int, default=50, help='maximum continuous steps of small change in the outer cycle')
@@ -159,7 +159,7 @@ if __name__ == '__main__':
                ylabel='实验性能', xlabel='实验次数')
 
         ax2 = plt.subplot(1, 2, 2)
-        ax2.plot(best_fitnesses)
+        ax2.plot(TIMES)
         ax2.set(title=args.method+'+优化时间--平均: %.3f\n最佳: %.3f 最差: %.3f\n 方差: %.8f'%
                 (TIMES.mean(), TIMES.min(), TIMES.max(), TIMES.var()),
                 ylabel='运行部分耗时/s', xlabel='实验次数')

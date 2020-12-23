@@ -142,7 +142,6 @@ class GA_Individual():
     def fitness(self):
         distance_sum = TSP_map.route_distance(self.chromosome)
         return -distance_sum
-        # return 1/distance_sum
 
     def __repr__(self):
         return str(self.chromosome)
@@ -194,7 +193,7 @@ class SA_TSP():
         # random: 均匀随机产生一组状态，确定两两状态间的最大目标值差，设定最差状态相对最佳状态的接受概率p=0.9
 
         if T0_mode =='experience':
-            return 800
+            return 700
 
         elif T0_mode =='random':
             dest_value = []
@@ -298,20 +297,6 @@ class SA_TSP():
             T = T*1.0/math.log(1+k_step)
         return T
 
-    def state_accept_p1(self,E_0,E_1,t):
-        # p: 从状态E(n)转移到E(n+1)的概率
-        # p=1: 接受状态转移
-        # p<1: 产生[0,1]随机数，若小于p则转移，否则不转移
-        # E_0/E_1: E(n)/E(n+1)
-        if E_1<E_0:
-            return True
-
-        p = np.exp(-(E_1-E_0)*1.0/t)
-        #print('p:'+str(p))
-        if random.random()<p:
-            return True
-        else:
-            return False
 
     def state_accept_p(self,E_0,E_1,t):
         # p: 从状态E(n)转移到E(n+1)的概率
@@ -405,13 +390,13 @@ class SA_TSP():
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
+    parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
     parser.add_argument('--mood', type=str, default='history', help='task index, value:[once/history/multi_times]')
     parser.add_argument('--map_mood', type=str, default='read', help='way of getting map, value: [random/read]')
     parser.add_argument('--map_point_num', type=int, default=30, help='num of points in the TSP map')
-    parser.add_argument('--map_file', type=str, default='TSP_points/BEN75-XY.txt', help='route of map points file')
+    parser.add_argument('--map_file', type=str, default='TSP_points/BEN30-XY.txt', help='route of map points file')
     # GA param
     parser.add_argument('--GA_N', type=int, default=60, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
@@ -424,7 +409,7 @@ if __name__ == '__main__':
     parser.add_argument('--SA_route_mode', type=str, default='MULTI2',help='way of updating route, value: [SWAP/REVERSE/INSERT/MULTI1/MULTI2]')
     parser.add_argument('--SA_T_annealing_mode', type=str, default='ordinary',help='way of annealing , value: [log/ordinary]')
 
-    parser.add_argument('--SA_T_converge_mode', type=str, default='iteration',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
+    parser.add_argument('--SA_T_converge_mode', type=str, default='temperature',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
     parser.add_argument('--SA_T_Lambda', type=float, default=0.9,help='ratio of annealing')
     parser.add_argument('--SA_T_end', type=float, default=1e-5, help='minimum temperature in the outer cycle')
     parser.add_argument('--SA_T_out_step', type=int, default=200, help='maximum steps in the outer cycle')
@@ -432,7 +417,7 @@ if __name__ == '__main__':
     parser.add_argument('--SA_T_out_dE_threshold', type=int, default=21,help='threshold of difference between Distances(n) and Distances(n+1) in the outer cycle')
 
     parser.add_argument('--SA_T_Metropolis_mode', type=str, default='step',help='way of converging in the inner cycle , value: [step/threshold]')
-    parser.add_argument('--SA_T_in_step', type=int, default=3000, help='maximum steps in the inner cycle')
+    parser.add_argument('--SA_T_in_step', type=int, default=5000, help='maximum steps in the inner cycle')
     parser.add_argument('--SA_T_in_threshold', type=float, default=50,help='threshold of difference between f(n) and f(n+1) in the inner cycle')
 
     args = parser.parse_args()
@@ -498,7 +483,6 @@ if __name__ == '__main__':
                 curr_route, fit_history = optimizer.optimize()
                 TIMES.append(time.time() - t0+t_before)
                 best_fitnesses.append(fit_history[-1])
-
             if best_fitnesses[-1]<min_dist:
                 min_dist = best_fitnesses[-1]
                 min_dist_route = curr_route
@@ -513,7 +497,7 @@ if __name__ == '__main__':
                 ylabel='实验性能', xlabel='实验次数')
 
         ax2 = plt.subplot(1, 2, 2)
-        ax2.plot(best_fitnesses)
+        ax2.plot(TIMES)
         ax2.set(title=args.method + '+TSP时间--平均: %.3f\n最佳: %.3f 最差: %.3f\n 方差: %.8f' %
                       (TIMES.mean(), TIMES.min(), TIMES.max(), TIMES.var()),
                 ylabel='运行部分耗时/s', xlabel='实验次数')
