@@ -297,8 +297,11 @@ class TSP_MAP(QWidget):
                 break
 
         points = np.array(points)
-        points[:, 0] = points[:, 0]*(self.width()/(points[:,0].max()+10))
-        points[:, 1] = points[:, 1]*(self.height()/(points[:,1].max()+10))
+        scale1 = (self.width()/(points[:,0].max()+10))
+        scale2 = (self.height()/(points[:,0].max()+10))
+        scale = min([scale1, scale2])
+        points[:, 0] = points[:, 0]*scale
+        points[:, 1] = points[:, 1]*scale
         self.points = points
         self.calculate_distance_martix()
         self.route = []
