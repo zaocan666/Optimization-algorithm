@@ -11,4 +11,4 @@
 
     python main_TSP.py --method GA --mood history --map_mood random --GA_N 50 --GA_C 0.95 --GA_M 0.02
 
-表示求解TSP问题，使用GA算法，运行模式是显示效用值历史，地图生成方式是随机生成，GA算法参数为：--GA_N 50 --GA_C 0.95 --GA_M 0.02 zyt
+表示求解TSP问题，使用GA算法，运行模式是显示效用值历史，地图生成方式是随机生成，GA算法参数为：--GA_N 50 --GA_C 0.95 --GA_M 0.02
