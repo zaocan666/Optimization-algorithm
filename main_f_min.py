@@ -73,16 +73,15 @@ class GA_Individual():
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
+    parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
     parser.add_argument('--mood', type=str, default='multi_times', help='once/history/multi_times')
     # GA param
     parser.add_argument('--GA_N', type=int, default=30, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
-    parser.add_argument('--GA_M', type=float, default=0.2, help='probability of mutaion')
+    parser.add_argument('--GA_M', type=float, default=0.1, help='probability of mutaion')
     parser.add_argument('--GA_nochange_iter', type=int, default=100, help='num of iteration without change of best individual before stop')
-    parser.add_argument('--GA_last_gl', type=float, default=1, help='proportion of last generation left')
     # SA param
     parser.add_argument('--SA_T0_mode', type=str, default='experience',help='way of initializing temperature , value: [random/experience]')
     parser.add_argument('--SA_T_annealing_mode', type=str, default='ordinary',help='way of annealing , value: [log/ordinary]')
@@ -91,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument('--SA_x_mode', type=str, default='Gauss', help='way of updating variable, value:[Gauss/Cauchy]')
 
     parser.add_argument('--SA_T_converge_mode', type=str, default='iteration',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
-    parser.add_argument('--SA_T_out_step', type=int, default=100, help='maximum steps in the outer cycle')
+    parser.add_argument('--SA_T_out_step', type=int, default=150, help='maximum steps in the outer cycle')
     parser.add_argument('--SA_T_end', type=float, default=1e-4, help='minimum temperature in the outer cycle')
     parser.add_argument('--SA_T_out_dE_threshold', type=int, default=21,help='threshold of difference between Distances(n) and Distances(n+1) in the outer cycle')
     parser.add_argument('--SA_T_out_dE_step', type=int, default=50, help='maximum continuous steps of small change in the outer cycle')
@@ -107,8 +106,7 @@ if __name__ == '__main__':
         np.random.seed(args.random_seed)
 
     if args.method == 'GA':
-        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, 
-                    args.GA_nochange_iter, last_generation_left=args.GA_last_gl, history_convert=lambda x: -x)
+        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, args.GA_nochange_iter)
     elif args.method == 'SA':
         optimizer = SA_optimizer(args.SA_T0_mode, args.SA_T_annealing_mode, args.SA_T_Lambda, args.SA_x_eta, args.SA_x_mode)
         optimizer.init_outer_para(args.SA_T_out_step, args.SA_T_end, args.SA_T_converge_mode, args.SA_T_out_dE_threshold, args.SA_T_out_dE_step)
@@ -118,9 +116,7 @@ if __name__ == '__main__':
     # 绘制出某次仿真过程中目标函数的变化曲线
     if args.mood=='history':
         if args.method == 'GA':
-            best_individual, fitness_history = optimizer.optimize(args.max_iteration)
-            x0, x1 = best_individual.xs_chromosome()
-            x0_best, x1_best = best_individual.bin2num(x0, 0), best_individual.bin2num(x1, 1)
+            _, fitness_history = optimizer.optimize(args.max_iteration)
         elif args.method == 'SA':
             x0_best, x1_best, fitness_history = optimizer.optimize()
         plt.plot(fitness_history)
@@ -141,7 +137,7 @@ if __name__ == '__main__':
                 t0 = time.time()
                 best_individual, _ = optimizer.optimize(args.max_iteration, verbose=False)
                 TIMES.append(time.time()-t0+t_before)
-                best_fitnesses.append(-best_individual.fitness())
+                best_fitnesses.append(best_individual.fitness())
             elif args.method == 'SA':
                 t0 = time.time()
                 _, _, E_history = optimizer.optimize()
@@ -159,7 +155,7 @@ if __name__ == '__main__':
                ylabel='实验性能', xlabel='实验次数')
 
         ax2 = plt.subplot(1, 2, 2)
-        ax2.plot(best_fitnesses)
+        ax2.plot(TIMES)
         ax2.set(title=args.method+'+优化时间--平均: %.3f\n最佳: %.3f 最差: %.3f\n 方差: %.8f'%
                 (TIMES.mean(), TIMES.min(), TIMES.max(), TIMES.var()),
                 ylabel='运行部分耗时/s', xlabel='实验次数')

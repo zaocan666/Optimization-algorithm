@@ -97,16 +97,20 @@ class SA_optimizer():
                 if (x0_ >= self.scale_min and x0_ <= self.scale_max) and (x1_ >= self.scale_min and x1_ <= self.scale_max):
                     break
 
-        print(str(x0_)+','+str(x1_))
         return x0_,x1_
 
     def annealing(self,T,k_step):
         #指数退温和温度与退温步数的对数成反比
 
         if self.T_annealing_mode == 'ordinary':
-            return self.T_Lambda * T
+            t = self.T_Lambda * T
         elif self.T_annealing_mode == 'log':
-            return T*1.0/math.log(1+k_step)
+            t = T*1.0/math.log(1+k_step)
+
+        if t>1e-4: #防止温度过小，超出计算机能计算的范畴
+            return t
+        else:
+            return 1e-4
 
     def optimize(self):
         # 指定模式产生初温
@@ -142,7 +146,6 @@ class SA_optimizer():
             # 在每个温度下重新寻找最优解
             in_step = 0
             while 1:
-                print('in_step:'+str(in_step))
                 # 每个温度下执行T_iter_step个循环
                 # 更新状态；计算新的目标函数值(<0就转移到新状态，否则按照一定概率转移);
 
@@ -150,7 +153,6 @@ class SA_optimizer():
                 x0_new,x1_new = self.new_state(x0_new,x1_new)
                 E_new = self.function(x0_new,x1_new)
                 dE = E_new - E_current
-                print('dE:'+str(dE))
 
                 # 状态转移
                 if dE<0:

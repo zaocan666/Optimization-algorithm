@@ -33,11 +33,8 @@ class TSP_MAP():
         self.num_of_points = int(lines[0].strip())
         points = []
         for line in lines[1:]:
-            try:
-                ps = line.strip().split(' ')
-                points.append([float(ps[0]), float(ps[1])])
-            except:
-                break
+            ps = line.strip().split(' ')
+            points.append([float(ps[0]), float(ps[1])])
 
         self.points = np.array(points)
         self.calculate_distance_martix()
@@ -129,20 +126,18 @@ class GA_Individual():
         # return self.crossover_order(p2)
 
     def mutation(self, p):
-        if np.random.rand() > p:
-            return
-        index_list = list(range(len(self.chromosome)))
-        sam = list(random.sample(index_list, 2))
-        start, end = min(sam), max(sam)
-        tmp = self.chromosome[start:end]
-        # np.random.shuffle(tmp)
-        tmp = tmp[::-1]
-        self.chromosome[start:end] = tmp
+        for i in range(self.num_of_points):
+            if np.random.rand() > p:
+                continue
+            other_part = list(set(range(self.num_of_points)) - set([i]))
+            change_j = np.random.choice(other_part)
+            temp = self.chromosome[change_j]
+            self.chromosome[change_j] = self.chromosome[i]
+            self.chromosome[i] = temp
 
     def fitness(self):
         distance_sum = TSP_map.route_distance(self.chromosome)
         return -distance_sum
-        # return 1/distance_sum
 
     def __repr__(self):
         return str(self.chromosome)
@@ -194,7 +189,7 @@ class SA_TSP():
         # random: 均匀随机产生一组状态，确定两两状态间的最大目标值差，设定最差状态相对最佳状态的接受概率p=0.9
 
         if T0_mode =='experience':
-            return 800
+            return 700
 
         elif T0_mode =='random':
             dest_value = []
@@ -298,20 +293,6 @@ class SA_TSP():
             T = T*1.0/math.log(1+k_step)
         return T
 
-    def state_accept_p1(self,E_0,E_1,t):
-        # p: 从状态E(n)转移到E(n+1)的概率
-        # p=1: 接受状态转移
-        # p<1: 产生[0,1]随机数，若小于p则转移，否则不转移
-        # E_0/E_1: E(n)/E(n+1)
-        if E_1<E_0:
-            return True
-
-        p = np.exp(-(E_1-E_0)*1.0/t)
-        #print('p:'+str(p))
-        if random.random()<p:
-            return True
-        else:
-            return False
 
     def state_accept_p(self,E_0,E_1,t):
         # p: 从状态E(n)转移到E(n+1)的概率
@@ -406,25 +387,24 @@ if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
-    parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
+    parser.add_argument('--max_iteration', type=int, default=5000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
     parser.add_argument('--mood', type=str, default='history', help='task index, value:[once/history/multi_times]')
     parser.add_argument('--map_mood', type=str, default='read', help='way of getting map, value: [random/read]')
     parser.add_argument('--map_point_num', type=int, default=30, help='num of points in the TSP map')
-    parser.add_argument('--map_file', type=str, default='TSP_points/BEN75-XY.txt', help='route of map points file')
+    parser.add_argument('--map_file', type=str, default='D:/大四上/智能算法/新建文件夹/BEN75-XY.txt', help='route of map points file')
     # GA param
     parser.add_argument('--GA_N', type=int, default=60, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')
-    parser.add_argument('--GA_M', type=float, default=0.2, help='probability of mutaion')
+    parser.add_argument('--GA_M', type=float, default=0.01, help='probability of mutaion')
     parser.add_argument('--GA_nochange_iter', type=int, default=500,
                         help='num of iteration without change of best individual before stop')
-    parser.add_argument('--GA_last_gl', type=float, default=0.2, help='proportion of last generation left')
     # SA param
     parser.add_argument('--SA_T0_mode', type=str, default='experience', help='way of initializing temperature , value: [random/experience]')
     parser.add_argument('--SA_route_mode', type=str, default='MULTI2',help='way of updating route, value: [SWAP/REVERSE/INSERT/MULTI1/MULTI2]')
     parser.add_argument('--SA_T_annealing_mode', type=str, default='ordinary',help='way of annealing , value: [log/ordinary]')
 
-    parser.add_argument('--SA_T_converge_mode', type=str, default='iteration',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
+    parser.add_argument('--SA_T_converge_mode', type=str, default='temperature',help='way of converging in the outer cycle , value: [temperature/iteration/performance]')
     parser.add_argument('--SA_T_Lambda', type=float, default=0.9,help='ratio of annealing')
     parser.add_argument('--SA_T_end', type=float, default=1e-5, help='minimum temperature in the outer cycle')
     parser.add_argument('--SA_T_out_step', type=int, default=200, help='maximum steps in the outer cycle')
@@ -432,7 +412,7 @@ if __name__ == '__main__':
     parser.add_argument('--SA_T_out_dE_threshold', type=int, default=21,help='threshold of difference between Distances(n) and Distances(n+1) in the outer cycle')
 
     parser.add_argument('--SA_T_Metropolis_mode', type=str, default='step',help='way of converging in the inner cycle , value: [step/threshold]')
-    parser.add_argument('--SA_T_in_step', type=int, default=3000, help='maximum steps in the inner cycle')
+    parser.add_argument('--SA_T_in_step', type=int, default=5000, help='maximum steps in the inner cycle')
     parser.add_argument('--SA_T_in_threshold', type=float, default=50,help='threshold of difference between f(n) and f(n+1) in the inner cycle')
 
     args = parser.parse_args()
@@ -449,8 +429,7 @@ if __name__ == '__main__':
         np.random.seed(args.random_seed)
 
     if args.method == 'GA':
-        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, 
-                    args.GA_nochange_iter, choose_mode='range', last_generation_left=args.GA_last_gl, history_convert=lambda x: -x)
+        optimizer = GA_optimizer(GA_Individual, args.GA_N, args.GA_C, args.GA_M, args.GA_nochange_iter,history_convert=lambda x: -x)
     elif args.method == 'SA':
         optimizer = SA_TSP(TSP_map, args.SA_T0_mode, args.SA_route_mode, args.SA_T_annealing_mode)
         optimizer.init_outer_para(args.SA_T_converge_mode, args.SA_T_Lambda, args.SA_T_end, args.SA_T_out_step, args.SA_T_out_dE_step, args.SA_T_out_dE_threshold)
@@ -493,15 +472,13 @@ if __name__ == '__main__':
                 best_individual, _ = optimizer.optimize(args.max_iteration, verbose=False)
                 TIMES.append(time.time() - t0+t_before)
                 best_fitnesses.append(-best_individual.fitness())
-                curr_route = best_individual.chromosome
             elif args.method == 'SA':
                 curr_route, fit_history = optimizer.optimize()
                 TIMES.append(time.time() - t0+t_before)
                 best_fitnesses.append(fit_history[-1])
-
-            if best_fitnesses[-1]<min_dist:
-                min_dist = best_fitnesses[-1]
-                min_dist_route = curr_route
+                if best_fitnesses[-1]<min_dist:
+                    min_dist = best_fitnesses[-1]
+                    min_dist_route = curr_route
             print(best_fitnesses[-1])
 
         best_fitnesses = np.array(best_fitnesses)
@@ -513,7 +490,7 @@ if __name__ == '__main__':
                 ylabel='实验性能', xlabel='实验次数')
 
         ax2 = plt.subplot(1, 2, 2)
-        ax2.plot(best_fitnesses)
+        ax2.plot(TIMES)
         ax2.set(title=args.method + '+TSP时间--平均: %.3f\n最佳: %.3f 最差: %.3f\n 方差: %.8f' %
                       (TIMES.mean(), TIMES.min(), TIMES.max(), TIMES.var()),
                 ylabel='运行部分耗时/s', xlabel='实验次数')
