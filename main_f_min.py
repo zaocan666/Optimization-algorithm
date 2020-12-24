@@ -76,7 +76,7 @@ if __name__ == '__main__':
     parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
-    parser.add_argument('--mood', type=str, default='multi_times', help='once/history/multi_times')
+    parser.add_argument('--mood', type=str, default='history', help='once/history/multi_times')
     # GA param
     parser.add_argument('--GA_N', type=int, default=30, help='size of population')
     parser.add_argument('--GA_C', type=float, default=0.95, help='probability of crossover')

@@ -390,10 +390,10 @@ class SA_TSP():
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, default='SA', help='type of optimization method')
+    parser.add_argument('--method', type=str, default='GA', help='type of optimization method')
     parser.add_argument('--max_iteration', type=int, default=2000, help='type of optimization method')
     parser.add_argument('--random_seed', type=int, default=-1, help='type of optimization method')
-    parser.add_argument('--mood', type=str, default='history', help='task index, value:[once/history/multi_times]')
+    parser.add_argument('--mood', type=str, default='multi_times', help='task index, value:[once/history/multi_times]')
     parser.add_argument('--map_mood', type=str, default='read', help='way of getting map, value: [random/read]')
     parser.add_argument('--map_point_num', type=int, default=30, help='num of points in the TSP map')
     parser.add_argument('--map_file', type=str, default='TSP_points/BEN75-XY.txt', help='route of map points file')
