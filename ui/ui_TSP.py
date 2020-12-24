@@ -278,10 +278,9 @@ class TSP_MAP(QWidget):
         self.distance_martix = np.power(distance_martix, 0.5)
 
     def random_generate(self):
-        self.points = np.random.rand(self.num_of_points, 2)
-        self.points[:, 0] *= self.width()
-        self.points[:, 1] *= self.height()
+        self.points = np.random.rand(self.num_of_points, 2)*100
         self.calculate_distance_martix()
+        self.get_draw_points()
         self.route = []
         
     def read_from_file(self, file_route):
@@ -296,15 +295,20 @@ class TSP_MAP(QWidget):
             except:
                 break
 
-        points = np.array(points)
-        scale1 = (self.width()/(points[:,0].max()+10))
-        scale2 = (self.height()/(points[:,0].max()+10))
-        scale = min([scale1, scale2])
-        points[:, 0] = points[:, 0]*scale
-        points[:, 1] = points[:, 1]*scale
-        self.points = points
+        self.points = np.array(points)
         self.calculate_distance_martix()
+        self.get_draw_points()
         self.route = []
+
+    def get_draw_points(self):
+        scale1 = (self.width()-5)/self.points[:,0].max()
+        scale2 = (self.height()-5)/self.points[:,1].max()
+        scale = min([scale1, scale2])
+
+        self.draw_points = np.zeros(self.points.shape)
+        self.draw_points[:, 0] = self.points[:, 0] * scale
+        self.draw_points[:, 1] = self.points[:, 1] * scale
+        self.draw_points[:, 1] = self.height() - self.draw_points[:, 1]
 
     def route_distance(self, route):
         distance_sum = 0
@@ -325,8 +329,8 @@ class TSP_MAP(QWidget):
         qp.setBrush(brush)
 
         radius = 4
-        for p in self.points:
-            qp.drawEllipse(p[0]-radius, self.height()-p[1]-radius, radius*2, radius*2)
+        for p in self.draw_points:
+            qp.drawEllipse(p[0]-radius, p[1]-radius, radius*2, radius*2)
 
     def draw_route(self, qp):
         if len(self.route)==0:
@@ -337,10 +341,10 @@ class TSP_MAP(QWidget):
         qp.setBrush(brush)
 
         for i in range(self.num_of_points - 1):
-            qp.drawLine(self.points[self.route[i], 0], self.height()-self.points[self.route[i], 1],
-                            self.points[self.route[i+1], 0], self.height()-self.points[self.route[i+1], 1])	
-        qp.drawLine(self.points[self.route[-1], 0], self.height()-self.points[self.route[-1], 1],
-                        self.points[self.route[0], 0], self.height()-self.points[self.route[0], 1])	
+            qp.drawLine(self.draw_points[self.route[i], 0], self.draw_points[self.route[i], 1],
+                            self.draw_points[self.route[i+1], 0], self.draw_points[self.route[i+1], 1])	
+        qp.drawLine(self.draw_points[self.route[-1], 0], self.draw_points[self.route[-1], 1],
+                        self.draw_points[self.route[0], 0], self.draw_points[self.route[0], 1])	
 
 #将解答按钮、解答过程播放按钮和速度选择框封装成一个类，供三个标签页重复使用
 class Solve_frame(QWidget):
@@ -444,9 +448,9 @@ class Solve_frame(QWidget):
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
-            best_individual = self.optimizer.step()
+            route, distance = self.optimizer.step()
 
-            if self.iter_num >= self.max_iteration or (not best_individual):
+            if self.iter_num >= self.max_iteration or (not route):
                 end_time = time.time()
                 QMessageBox.information(self, "提示", "完成解答，用时：%.1f s" % (end_time - self.start_time),
                                 QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
@@ -454,10 +458,10 @@ class Solve_frame(QWidget):
                 # self.solve_test.setHidden(True)
                 self.end()
 
-            if best_individual:
-                self.parent().Point_area.route = best_individual.chromosome
+            if route:
+                self.parent().Point_area.route = route
                 self.parent().repaint()
-                self.solve_test.setText("回合数:%d 适配值:%.2f"%(self.iter_num, best_individual.fitness(self.tsp_map)))
+                self.solve_test.setText("回合数:%d 适配值:%.2f"%(self.iter_num, distance))
 
             self.iter_num += 1
 

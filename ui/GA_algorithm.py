@@ -168,7 +168,7 @@ class GA_optimizer():
 
         self.fitness_history.append(self.history_convert(self.best_individual.fitness(self.TSP_map)))
         if self.nochange_iter_running < 0:
-            return False
+            return False, False
 
         fitnesses = [a.fitness(self.TSP_map) for a in self.population]
 
@@ -185,5 +185,5 @@ class GA_optimizer():
         if verbose:
             print('best_individual: %s\t best_fitness: %.3f\t nochange_iter:%d'%(self.best_individual.__repr__(), self.history_convert(self.best_individual.fitness(self.TSP_map)), self.nochange_iter_running))
         
-        return self.best_individual
+        return self.best_individual.chromosome, self.history_convert(self.best_individual.fitness(self.TSP_map))
     
