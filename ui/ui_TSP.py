@@ -1,13 +1,13 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDesktopWidget, QMessageBox, QPushButton, QLabel, QLineEdit, QComboBox
-from PyQt5.QtGui import QPainter, QBrush, QIntValidator
+from PyQt5.QtGui import QPainter, QBrush
 from PyQt5.QtCore import Qt, QBasicTimer
 # from PyQt5 import QtGui
 import sys
 import numpy as np
-import copy
 import time
 
 from GA_algorithm import GA_optimizer
+from SA_algorithm import SA_TSP
 
 # from game_class import Solver, get_small_tri_num
 # from pic_process import tooClose, arc_len, num_tooClose
@@ -99,7 +99,7 @@ class GA_args(QWidget):
         super().__init__()
 
         self.setParent(parent)
-        self.resize(300, 200)
+        self.resize(400, 250)
 
         a0_label = QLabel(parent = self)
         a0_label.setText("最大迭代次数：")
@@ -107,6 +107,7 @@ class GA_args(QWidget):
         self.a0_line = QLineEdit(parent = self)
         self.a0_line.setText("2000")
         self.a0_line.move(a0_label.x()+a0_label.width()+30, a0_label.y())
+        self.a0_line.resize(100,self.a0_line.height())
 
         a1_label = QLabel(parent = self)
         a1_label.setText("种群规模：")
@@ -114,6 +115,7 @@ class GA_args(QWidget):
         self.a1_line = QLineEdit(parent = self)
         self.a1_line.setText("60")
         self.a1_line.move(a1_label.x()+a1_label.width()+30, a1_label.y())
+        self.a1_line.resize(100,self.a1_line.height())
 
         a2_label = QLabel(parent=self)
         a2_label.setText("交叉概率：")
@@ -121,6 +123,7 @@ class GA_args(QWidget):
         self.a2_line = QLineEdit(parent=self)
         self.a2_line.setText("0.95")
         self.a2_line.move(self.a1_line.x(), a2_label.y())
+        self.a2_line.resize(100,self.a2_line.height())
 
         a3_label = QLabel(parent=self)
         a3_label.setText("变异概率：")
@@ -128,6 +131,7 @@ class GA_args(QWidget):
         self.a3_line = QLineEdit(parent=self)
         self.a3_line.setText("0.2")
         self.a3_line.move(self.a1_line.x(), a3_label.y())
+        self.a3_line.resize(100,self.a3_line.height())
 
         a4_label = QLabel(parent=self)
         a4_label.setText("收敛不变上限：")
@@ -135,6 +139,7 @@ class GA_args(QWidget):
         self.a4_line = QLineEdit(parent=self)
         self.a4_line.setText("200")
         self.a4_line.move(self.a1_line.x(), a4_label.y())
+        self.a4_line.resize(100,self.a4_line.height())
 
         a5_label = QLabel(parent=self)
         a5_label.setText("上一种群保留比例：")
@@ -142,6 +147,7 @@ class GA_args(QWidget):
         self.a5_line = QLineEdit(parent=self)
         self.a5_line.setText("0.2")
         self.a5_line.move(self.a1_line.x(), a5_label.y())
+        self.a5_line.resize(100,self.a5_line.height())
 
     def get_args(self):
         def int_arg(line, name):
@@ -183,7 +189,7 @@ class SA_args(QWidget):
         super().__init__()
 
         self.setParent(parent)
-        self.resize(400, 200)
+        self.resize(400, 250)
 
         temp_init_label = QLabel(parent=self)
         temp_init_label.setText('温度初始化：')
@@ -214,12 +220,12 @@ class SA_args(QWidget):
         self.state_change_combo = QComboBox(self)
         self.state_change_combo.move(state_change_label.x()+state_change_label.width()+30, state_change_label.y())
         self.state_change_combo.resize(230,self.state_change_combo.height())
+        self.state_change_combo.addItem('随机选择SWAP,REVERSE或INSERT', 'MULTI2')
         self.state_change_combo.addItem('随机交换两个城市位置(SWAP)', 'SWAP')
         self.state_change_combo.addItem('两位置之间的城市路线逆序(REVERSE)', 'REVERSE')
         self.state_change_combo.addItem('指定某段序列后插(INSERT)', 'INSERT')
         self.state_change_combo.addItem('随机选择SWAP或INSERT', 'MULTI1')
-        self.state_change_combo.addItem('随机选择SWAP,REVERSE或INSERT', 'MULTI2')
-
+        
         temp_converge_label = QLabel(parent=self)
         temp_converge_label.setText('外循环温度收敛模式：')
         temp_converge_label.move(state_change_label.x(), state_change_label.y()+state_change_label.height()+5)
@@ -228,7 +234,7 @@ class SA_args(QWidget):
         self.temp_converge_combo.resize(200,self.temp_converge_combo.height())
         self.temp_converge_combo.addItem('指定循环次数', 'iteration')
         self.temp_converge_combo.addItem('指定结束温度', 'temperature')
-        self.temp_converge_combo.addItem('最优值连续若干步变化微小', 'performance')
+        # self.temp_converge_combo.addItem('最优值连续若干步变化微小', 'performance')
         self.temp_converge_combo.currentIndexChanged.connect(self.temp_converge_combo_change)
         ########
         self.temp_converge_iter_label = QLineEdit(parent = self)
@@ -240,11 +246,12 @@ class SA_args(QWidget):
         self.temp_converge_endtemp_label.move(self.temp_converge_combo.x()+self.temp_converge_combo.width()+5, self.temp_converge_combo.y())
         self.temp_converge_endtemp_label.resize(60,self.temp_converge_endtemp_label.height())
         self.temp_converge_endtemp_label.setText('1e-5')
+        self.temp_converge_endtemp_label.setHidden(True)
         ########
-        self.temp_converge_change_label = QLineEdit(parent = self)
-        self.temp_converge_change_label.move(self.temp_converge_combo.x()+self.temp_converge_combo.width()+5, self.temp_converge_combo.y())
-        self.temp_converge_change_label.resize(60,self.temp_converge_change_label.height())
-        self.temp_converge_change_label.setText('2')
+        # self.temp_converge_change_label = QLineEdit(parent = self)
+        # self.temp_converge_change_label.move(self.temp_converge_combo.x()+self.temp_converge_combo.width()+5, self.temp_converge_combo.y())
+        # self.temp_converge_change_label.resize(60,self.temp_converge_change_label.height())
+        # self.temp_converge_change_label.setText('2')
 
         sample_stable_label = QLabel(parent=self)
         sample_stable_label.setText('内循环抽样稳定准则：')
@@ -253,18 +260,18 @@ class SA_args(QWidget):
         self.sample_stable_combo.move(sample_stable_label.x()+sample_stable_label.width()+30, sample_stable_label.y())
         self.sample_stable_combo.resize(200,self.sample_stable_combo.height())
         self.sample_stable_combo.addItem('指定循环次数', 'step')
-        self.sample_stable_combo.addItem('最优值连续若干步变化微小', 'threshold')
+        # self.sample_stable_combo.addItem('最优值连续若干步变化微小', 'threshold')
         self.sample_stable_combo.currentIndexChanged.connect(self.sample_stable_combo_change)
         ########
         self.sample_stable_iter_label = QLineEdit(parent = self)
         self.sample_stable_iter_label.move(self.sample_stable_combo.x()+self.sample_stable_combo.width()+5, self.sample_stable_combo.y())
         self.sample_stable_iter_label.resize(60,self.sample_stable_iter_label.height())
-        self.sample_stable_iter_label.setText('200')
-        ########
-        self.sample_stable_change_label = QLineEdit(parent = self)
-        self.sample_stable_change_label.move(self.sample_stable_combo.x()+self.sample_stable_combo.width()+5, self.sample_stable_combo.y())
-        self.sample_stable_change_label.resize(60,self.sample_stable_change_label.height())
-        self.sample_stable_change_label.setText('2')
+        self.sample_stable_iter_label.setText('500')
+        # ########
+        # self.sample_stable_change_label = QLineEdit(parent = self)
+        # self.sample_stable_change_label.move(self.sample_stable_combo.x()+self.sample_stable_combo.width()+5, self.sample_stable_combo.y())
+        # self.sample_stable_change_label.resize(60,self.sample_stable_change_label.height())
+        # self.sample_stable_change_label.setText('2')
 
     def temp_decreas_combo_change(self):
         if self.temp_decreas_combo.currentText()=='指数退温系数':
@@ -276,41 +283,41 @@ class SA_args(QWidget):
         if self.temp_converge_combo.currentText()=='指定循环次数':
             self.temp_converge_iter_label.setHidden(False)
             self.temp_converge_endtemp_label.setHidden(True)
-            self.temp_converge_change_label.setHidden(True)
+            # self.temp_converge_change_label.setHidden(True)
         elif self.temp_converge_combo.currentText()=='指定结束温度':
             self.temp_converge_iter_label.setHidden(True)
             self.temp_converge_endtemp_label.setHidden(False)
-            self.temp_converge_change_label.setHidden(True)
+            # self.temp_converge_change_label.setHidden(True)
         else:
             self.temp_converge_iter_label.setHidden(True)
             self.temp_converge_endtemp_label.setHidden(True)
-            self.temp_converge_change_label.setHidden(False)
+            # self.temp_converge_change_label.setHidden(False)
 
     def sample_stable_combo_change(self):
         if self.sample_stable_combo.currentText()=='指定循环次数':
             self.sample_stable_iter_label.setHidden(False)
-            self.sample_stable_change_label.setHidden(True)
+            # self.sample_stable_change_label.setHidden(True)
         else:
             self.sample_stable_iter_label.setHidden(True)
-            self.sample_stable_change_label.setHidden(False)
+            # self.sample_stable_change_label.setHidden(False)
 
     def get_args(self):
 
-        temp_init_combo = self.temp_init_combo.currentData()
-        temp_decreas_combo = self.temp_decreas_combo.currentData()
-        temp_decreas_label = float(self.temp_decreas_label.text())
-        state_change_combo = self.state_change_combo.currentData()
-        temp_converge_combo = self.temp_converge_combo.currentData()
-        temp_converge_iter_label = int(self.temp_converge_iter_label.text())
-        temp_converge_endtemp_label = float(self.temp_converge_endtemp_label.text())
-        temp_converge_change_label = int(self.temp_converge_change_label.text())
-        sample_stable_combo = self.sample_stable_combo.currentData()
-        sample_stable_iter_label = int(self.sample_stable_iter_label.text())
-        sample_stable_change_label = int(self.sample_stable_change_label.text())
+        temp_init_combo = self.temp_init_combo.currentData()         # 指定温度初始化模式
+        temp_decreas_combo = self.temp_decreas_combo.currentData()   # 温度退火模式
+        temp_decreas_label = float(self.temp_decreas_label.text())   # 指数退温系数
+        state_change_combo = self.state_change_combo.currentData()   # 状态更新模式
+        temp_converge_combo = self.temp_converge_combo.currentData() # 外循环温度收敛模式
+        temp_converge_iter_label = int(self.temp_converge_iter_label.text())         # 基于循环次数收敛：指定外循环次数
+        temp_converge_endtemp_label = float(self.temp_converge_endtemp_label.text()) # 基于温度收敛：指定外循环终止温度
+        # temp_converge_change_label = int(self.temp_converge_change_label.text())
+        sample_stable_combo = self.sample_stable_combo.currentData()                 # 内循环收敛模式
+        sample_stable_iter_label = int(self.sample_stable_iter_label.text())         # 基于循环次数收敛：指定内循环次数
+        # sample_stable_change_label = int(self.sample_stable_change_label.text())
 
         return (temp_init_combo, temp_decreas_combo, temp_decreas_label, state_change_combo, temp_converge_combo, 
-                    temp_converge_iter_label, temp_converge_endtemp_label, temp_converge_change_label, sample_stable_combo, 
-                    sample_stable_iter_label, sample_stable_change_label)
+                    temp_converge_iter_label, temp_converge_endtemp_label, sample_stable_combo,
+                    sample_stable_iter_label)
 
 class TSP_MAP(QWidget):
     def __init__(self, parent, num_of_points=0):
@@ -474,11 +481,17 @@ class Solve_frame(QWidget):
             self.max_iteration = args[0]
             self.optimizer = GA_optimizer(tsp_map, *args[1:], history_convert=lambda x: -x)
         else:
-            (temp_init_combo, temp_decreas_combo, temp_decreas_label, state_change_combo, temp_converge_combo, 
-            temp_converge_iter_label, temp_converge_endtemp_label, temp_converge_change_label, sample_stable_combo, 
-            sample_stable_iter_label, sample_stable_change_label) = self.sa_args.get_args()
 
-            self.max_iteration=temp_converge_combo
+            (temp_init_combo, temp_decreas_combo, temp_decreas_label, state_change_combo, temp_converge_combo, 
+            temp_converge_iter_label, temp_converge_endtemp_label, sample_stable_combo,
+            sample_stable_iter_label) = self.sa_args.get_args()
+            self.optimizer =SA_TSP(tsp_map, temp_init_combo, state_change_combo, temp_decreas_combo)
+            self.optimizer.init_outer_para(temp_converge_combo, temp_decreas_label,temp_converge_endtemp_label, temp_converge_iter_label,
+                                      100, 2) # 100与2无意义
+            self.optimizer.init_inner_para(sample_stable_iter_label,2,sample_stable_combo) # 2无实际意义
+            self.optimizer.visual_init()
+
+            self.max_iteration=temp_converge_iter_label
 
         self.problem_solving = True
         self.iter_num = 0
@@ -499,6 +512,7 @@ class Solve_frame(QWidget):
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
+
             route, distance = self.optimizer.step()
 
             if self.iter_num >= self.max_iteration or (not route):

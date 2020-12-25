@@ -387,6 +387,7 @@ class SA_TSP():
 
         return best_route, Distances
 
+
 if __name__ == '__main__':
     T0 = time.time()
     parser = argparse.ArgumentParser()
