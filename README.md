@@ -3,6 +3,7 @@
 
 ##文件
 - GA_algorithm：GA算法框架，被main_f_min.py和main_TSP.py调用
+- SA_algorithm：SA算法框架，被main_f_min.py调用
 - main_f_min.py：函数优化问题主文件，可使用GA或SA算法，同时可以指定两种算法所用参数
 - main_TSP.py：TSP问题主文件，同上
 
